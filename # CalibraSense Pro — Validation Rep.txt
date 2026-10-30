@@ -1,0 +1,154 @@
+# CalibraSense Pro — Validation Report
+
+## 1. Purpose
+
+This report documents the preliminary validation of CalibraSense Pro, an ESP32-based analog monitoring prototype. The system acquires ADC readings from a potentiometer, computes a filtered value, detects NORMAL and HIGH states using hysteresis, controls output indicators, and records data for analysis.
+
+The objective is to examine the collected measurements, evaluate the recorded system states, and identify additional tests required to establish reliable operation.
+
+## 2. Test Setup
+
+| Parameter | Configuration |
+|---|---|
+| Controller | ESP32 development board |
+| Analog input | Potentiometer |
+| ADC resolution | 12-bit |
+| Nominal ADC count range | 0–4095 |
+| Sampling method | Multiple samples averaged per measurement |
+| Sampling configuration | 20 samples per measurement |
+| Logging interval | 500 ms |
+| State detection | Two-threshold hysteresis |
+| Output indicators | LED, buzzer and LCD |
+| Data format | CSV |
+| Analysis tools | Python / Google Colab and Microsoft Excel |
+
+The ADC count range is the nominal digital range for a 12-bit conversion. Actual voltage accuracy depends on the ESP32 ADC characteristics, input configuration, and calibration.
+
+## 3. Validation Dataset
+
+The recorded CSV file contained 548 rows, including one repeated header row. After excluding the repeated header, 547 measurement records were available for preliminary analysis.
+
+The dataset included timestamps, raw ADC readings, filtered ADC readings, system state, LED status, buzzer status, event counts, state durations, and event markers.
+
+## 4. Descriptive Statistical Results
+
+| Measurement | Raw ADC | Filtered ADC |
+|---|---:|---:|
+| Mean | 2088.45 | 2078.32 |
+| Minimum | 0 | 0 |
+| Maximum | 4095 | 4095 |
+| Range | 4095 | 4095 |
+| Standard deviation | 2004.32 | 1960.74 |
+
+The filtered readings had a lower standard deviation than the raw readings in this dataset. This is consistent with a reduction in measurement variation from averaging, although the large changes in potentiometer position and endpoint readings mean that this comparison alone does not quantify noise reduction under a fixed input.
+
+## 5. State Distribution
+
+The recorded state distribution was:
+
+| State | Number of records | Percentage |
+|---|---:|---:|
+| NORMAL | 275 | 50.27% |
+| HIGH | 272 | 49.73% |
+| **Total** | **547** | **100%** |
+
+Both states appeared frequently in the dataset. This shows that the logger recorded both operating states, but does not by itself prove that every state transition occurred at the intended threshold.
+
+## 6. ADC Endpoint Investigation
+
+The dataset contained:
+
+- 236 raw readings at 0.
+- 248 raw readings at 4095.
+- 484 endpoint readings out of 547 total records, approximately 88.5%.
+
+These observations require further investigation. They may reflect deliberate movement of the potentiometer to its extremes, ADC saturation, or a measurement and wiring issue.
+
+**Required test:** Slowly sweep the potentiometer through its range and record readings at several intermediate positions. Confirm that the input voltage stays within the ESP32 ADC input limits and compare the voltage with a trusted multimeter.
+
+## 7. Filtering Assessment
+
+The mean filtered ADC value was 2078.32, compared with a raw ADC mean of 2088.45. The filtered standard deviation was also lower than the raw standard deviation.
+
+These results are preliminary evidence that the averaging process changes the measurement distribution and may smooth short-term variation. A controlled test at a fixed potentiometer position is needed to measure its effectiveness more directly.
+
+### Recommended controlled test
+
+1. Keep the potentiometer at a fixed position.
+2. Record a sufficiently large set of raw ADC samples.
+3. Record the corresponding averaged values.
+4. Compare their standard deviations and ranges.
+5. Repeat at several input levels.
+
+## 8. Hysteresis Assessment
+
+The initial candidate thresholds are:
+
+- Upper threshold: 2565 ADC counts.
+- Lower threshold: 2450 ADC counts.
+
+The intended behavior is to enter HIGH when the filtered value reaches or exceeds the upper threshold, and return to NORMAL when the filtered value falls to or below the lower threshold.
+
+The recorded filtered-value ranges were:
+
+| Recorded state | Minimum | Maximum |
+|---|---:|---:|
+| NORMAL | 0 | 2562.3 |
+| HIGH | 2453.9 | 4095 |
+
+These ranges overlap. Consequently, the dataset alone does not establish unique or fully validated threshold values. The proposed thresholds should be treated as initial candidates rather than final validated limits.
+
+### Required threshold test
+
+1. Increase the potentiometer input gradually from a low value.
+2. Record the filtered value at the NORMAL-to-HIGH transition.
+3. Decrease the input gradually.
+4. Record the filtered value at the HIGH-to-NORMAL transition.
+5. Repeat the sweep several times.
+6. Verify that the output does not rapidly toggle near either boundary.
+
+The results should be used to confirm or revise the candidate thresholds.
+
+## 9. Output and Logging Checks
+
+The recorded data includes NORMAL and HIGH states together with LED and buzzer status fields. These records can be used to check whether the logged output states match the intended logic.
+
+Further physical verification is required to establish that the LED, buzzer and LCD operate correctly in the assembled circuit.
+
+| Check | Status |
+|---|---|
+| CSV data collected | Completed |
+| Initial statistical analysis | Completed |
+| State distribution inspected | Completed |
+| ADC endpoint readings identified | Completed |
+| Filtering effectiveness under fixed input | Pending controlled test |
+| Hysteresis transition repeatability | Pending controlled test |
+| Physical LED and buzzer operation | Requires final verification |
+| LCD display accuracy | Requires final verification |
+| ADC voltage calibration | Pending reference measurement |
+
+## 10. Accuracy and Limitations
+
+The present results describe ADC counts and recorded state behavior. They do not establish absolute voltage measurement accuracy because the dataset has not yet been validated against a trusted reference measurement.
+
+The system uses a potentiometer as a controllable analog input. Therefore, the current evaluation demonstrates prototype behavior rather than validated performance as an industrial sensor or measurement instrument.
+
+Potential sources of uncertainty include ADC nonlinearity, input noise, wiring conditions, supply variation, and the effects of sampling and averaging.
+
+## 11. Conclusion
+
+The preliminary evaluation of CalibraSense Pro confirms that a dataset containing raw and filtered ADC readings, system states, and event information was collected and analyzed. Both NORMAL and HIGH states were recorded, and the filtered readings exhibited a lower standard deviation than the raw readings in the collected dataset.
+
+However, the large number of endpoint readings and the overlap between the recorded state ranges require additional investigation. Controlled input sweeps, repeatability checks, physical output verification, and reference-based voltage measurements are needed before the thresholds and measurement accuracy can be considered validated.
+
+The next stage of development will focus on these tests and documenting their measured results.
+
+## 12. Future Validation Work
+
+- Verify ADC behavior at low, intermediate and high input voltages.
+- Investigate the readings at 0 and 4095 ADC counts.
+- Measure filtering performance with a stationary input.
+- Confirm hysteresis thresholds through repeated rising and falling sweeps.
+- Verify LED, buzzer and LCD operation against the logged state.
+- Compare measured input voltage against a trusted multimeter.
+- Update this report with repeatability measurements, plots and final test results.
